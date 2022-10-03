@@ -1,0 +1,31 @@
+stages:
+  - build
+  - deploy
+
+build:
+  image: node:12-alpine
+  stage: build
+  script:
+    - npm install
+    - npm run build -- --mode production
+  cache:
+    paths:
+      - node_modules/
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 hour
+  only:
+    - main
+
+deploy:
+  image: alpine:latest
+  stage: deploy
+  tags:
+    - deployment
+  script:
+    - chmod og= $ID_RSA
+    - apk update && apk add openssh-client
+    - scp -i $ID_RSA -o StrictHostKeyChecking=no -r dist/* $SERVER_USER@$SERVER_IP:/usr/share/nginx/html
+  only:
+    - main
